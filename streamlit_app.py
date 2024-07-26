@@ -114,7 +114,7 @@ def generate_article_with_claude(combined_text, keyword, target_audience, tone):
         6. Maintain the specified tone throughout
         7. Be between 800-1000 words long
 
-        Please format the article in Markdown, including placeholders for three images.
+        Please format the article in Markdown, including placeholders for three images: ![Image 1](image_placeholder_1), ![Image 2](image_placeholder_2), ![Image 3](image_placeholder_3).
         """
 
         response = st.session_state.anthropic_client.messages.create(
