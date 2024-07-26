@@ -130,7 +130,7 @@ def generate_article_with_claude(combined_text, keyword, target_audience, tone):
 
         response = st.session_state.anthropic_client.messages.create(
             model="claude-3-5-sonnet-20240620",
-            max_tokens=6000,  # Aumentato per consentire contenuti più lunghi
+            max_tokens=4096,  # Aumentato per consentire contenuti più lunghi
             temperature=0.7,
             messages=[
                 {"role": "user", "content": prompt}
