@@ -11,8 +11,8 @@ from anthropic import Anthropic
 nltk.download('punkt')
 
 # Load API keys from environment variables
-openai_client = OpenAI(api_key=st.secrets.openai_key)
-anthropic_client = Anthropic(api_key=st.secrets.anthropic_key)
+openai_client = OpenAI(api_key=st.secrets["openai_key"])
+anthropic_client = Anthropic(api_key=st.secrets["anthropic_key"])
 
 def extract_text_from_url(url):
     try:
