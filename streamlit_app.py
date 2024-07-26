@@ -7,10 +7,8 @@ import nltk
 from nltk.tokenize import sent_tokenize
 from anthropic import Anthropic
 
-# Ensure you have the necessary NLTK data files
 nltk.download('punkt')
 
-# Function to initialize or update clients
 def initialize_clients():
     if 'openai_client' not in st.session_state or st.session_state.openai_key != st.session_state.get('prev_openai_key'):
         st.session_state.openai_client = OpenAI(api_key=st.session_state.openai_key)
@@ -20,11 +18,11 @@ def initialize_clients():
         st.session_state.anthropic_client = Anthropic(api_key=st.session_state.anthropic_key)
         st.session_state.prev_anthropic_key = st.session_state.anthropic_key
 
-# Sidebar for API configuration
+# Sidebar per la configurazione API
 with st.sidebar:
     st.title("Configurazione API")
-    st.session_state.openai_key = st.text_input("OpenAI Key", type="password", key="openai_key_input")
-    st.session_state.anthropic_key = st.text_input("Claude Key", type="password", key="anthropic_key_input")
+    st.session_state.openai_key = st.text_input("Chiave OpenAI", type="password", key="openai_key_input")
+    st.session_state.anthropic_key = st.text_input("Chiave Claude", type="password", key="anthropic_key_input")
     
     if st.session_state.openai_key and st.session_state.anthropic_key:
         initialize_clients()
@@ -41,32 +39,32 @@ def extract_text_from_url(url):
         text = ' '.join([para.get_text() for para in paragraphs])
         return text
     except requests.exceptions.RequestException as e:
-        st.error(f"Error fetching URL {url}: {e}")
+        st.error(f"Errore nel recupero dell'URL {url}: {e}")
         return ""
 
 def generate_image_prompt(keyword, tone, article_content):
     try:
         prompt = f"""
-        Based on the following information, create a detailed and creative prompt for generating an image using DALL-E:
+        Basandoti sulle seguenti informazioni, crea un prompt dettagliato e creativo per generare un'immagine usando DALL-E:
 
-        Keyword: {keyword}
-        Tone: {tone}
-        Article content: {article_content[:500]}  # Using first 500 characters of the article
+        Parola chiave: {keyword}
+        Tono: {tone}
+        Contenuto dell'articolo: {article_content[:500]}  # Usando i primi 500 caratteri dell'articolo
 
-        The prompt should:
-        1. Be vivid and descriptive
-        2. Reflect the keyword and tone
-        3. Relate to the content of the article
-        4. Be suitable for DALL-E image generation
-        5. Be about 50-100 words long
+        Il prompt dovrebbe:
+        1. Essere vivido e descrittivo
+        2. Riflettere la parola chiave e il tono
+        3. Essere correlato al contenuto dell'articolo
+        4. Essere adatto alla generazione di immagini con DALL-E
+        5. Essere lungo circa 50-100 parole
 
-        Generate the image prompt:
+        Genera il prompt per l'immagine:
         """
 
         response = st.session_state.openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a creative prompt engineer for image generation."},
+                {"role": "system", "content": "Sei un ingegnere creativo di prompt per la generazione di immagini."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=500,
@@ -75,7 +73,7 @@ def generate_image_prompt(keyword, tone, article_content):
 
         return response.choices[0].message.content.strip()
     except Exception as e:
-        st.error(f"Error generating image prompt: {e}")
+        st.error(f"Errore nella generazione del prompt per l'immagine: {e}")
         return ""
 
 def generate_image(prompt):
@@ -89,37 +87,50 @@ def generate_image(prompt):
         image_url = response.data[0].url
         return image_url
     except Exception as e:
-        st.error(f"Error generating image: {e}")
+        st.error(f"Errore nella generazione dell'immagine: {e}")
         return ""
 
 def generate_article_with_claude(combined_text, keyword, target_audience, tone):
     try:
         prompt = f"""
-        You are an expert SEO content writer. Your task is to create a high-quality, SEO-optimized blog article based on the following information:
+        Sei un esperto scrittore di contenuti SEO e specialista di marketing digitale. Il tuo compito è creare un articolo di blog di alta qualità, originale e ottimizzato per SEO in italiano, basato sulle seguenti informazioni:
 
-        Keyword: {keyword}
-        Target Audience: {target_audience}
-        Tone: {tone}
+        Parola chiave: {keyword}
+        Pubblico target: {target_audience}
+        Tono: {tone}
 
-        Use the following text as a source of information, but do not copy it directly. Instead, use it as inspiration to create original content:
+        Usa il seguente testo come fonte di informazioni e ispirazione, ma non copiarlo direttamente. Invece, usalo come punto di partenza per creare contenuti completamente originali:
 
         {combined_text}
 
-        Your article should:
-        1. Have an engaging title that includes the keyword
-        2. Include an SEO-optimized meta description
-        3. Be well-structured with headings and subheadings
-        4. Naturally incorporate the keyword throughout the text
-        5. Be informative and valuable to the target audience
-        6. Maintain the specified tone throughout
-        7. Be between 800-1000 words long
+        Il tuo articolo dovrebbe:
+        1. Avere un titolo accattivante che includa la parola chiave principale in modo naturale
+        2. Includere una meta descrizione ottimizzata per SEO di circa 155-160 caratteri
+        3. Essere ben strutturato con una chiara introduzione, corpo e conclusione
+        4. Utilizzare titoli H2 e H3 per organizzare il contenuto, incorporando parole chiave secondarie dove appropriato
+        5. Incorporare naturalmente la parola chiave principale in tutto il testo, mirando a una densità di parole chiave di circa 1-2%
+        6. Includere almeno un elenco numerato o puntato per migliorare la leggibilità
+        7. Essere informativo, prezioso e pratico per il pubblico target
+        8. Mantenere il tono specificato in tutto il contenuto
+        9. Essere lungo almeno 1000 parole, preferibilmente tra 1200-1500 parole per una copertura completa
+        10. Includere segnaposto per link interni ed esterni dove appropriato (usa [LINK INTERNO] e [LINK ESTERNO] come segnaposto)
+        11. Concludere con una forte call-to-action (CTA) rilevante per l'argomento e il pubblico
 
-        Please format the article in Markdown, including placeholders for three images: ![Image 1](image_placeholder_1), ![Image 2](image_placeholder_2), ![Image 3](image_placeholder_3).
+        Altre best practice SEO da implementare:
+        - Usa variazioni della parola chiave principale e termini correlati per migliorare il SEO semantico
+        - Includi almeno una statistica o un dato rilevante, citando la fonte
+        - Scrivi in voce attiva e usa parole di transizione per migliorare il flusso
+        - Ottimizza per i featured snippet includendo una breve risposta diretta a una domanda comune relativa all'argomento
+        - Includi una sezione di domande frequenti (FAQ) alla fine con 3-5 domande pertinenti e risposte concise
+
+        Formatta l'articolo in Markdown, includendo segnaposto per tre immagini: ![Immagine 1](segnaposto_immagine_1), ![Immagine 2](segnaposto_immagine_2), ![Immagine 3](segnaposto_immagine_3).
+
+        Ricorda, l'obiettivo è creare un articolo altamente originale, coinvolgente e ottimizzato per SEO che fornisca un valore reale al lettore mentre mira efficacemente alla parola chiave e al pubblico specificati.
         """
 
         response = st.session_state.anthropic_client.messages.create(
             model="claude-3-5-sonnet-20240620",
-            max_tokens=4096,
+            max_tokens=6000,  # Aumentato per consentire contenuti più lunghi
             temperature=0.7,
             messages=[
                 {"role": "user", "content": prompt}
@@ -128,82 +139,86 @@ def generate_article_with_claude(combined_text, keyword, target_audience, tone):
         
         return response.content[0].text
     except Exception as e:
-        st.error(f"Error generating article with Claude: {e}")
+        st.error(f"Errore nella generazione dell'articolo con Claude: {e}")
         return ""
 
 def main():
-    st.title("SEO-Optimized Blog Article Generator")
+    st.title("Generatore di Articoli di Blog Ottimizzati per SEO")
     
-    # Check if API keys are set
+    # Controlla se le chiavi API sono impostate
     if 'openai_client' not in st.session_state or 'anthropic_client' not in st.session_state:
-        st.warning("Please set your API keys in the sidebar to continue.")
+        st.warning("Per favore, imposta le tue chiavi API nella barra laterale per continuare.")
         return
 
-    # Input fields
-    url1 = st.text_input("Enter the first URL")
-    url2 = st.text_input("Enter the second URL")
-    url3 = st.text_input("Enter the third URL")
-    keyword = st.text_input("Enter the keyword")
-    target_audience = st.text_input("Enter the target audience")
-    tone = st.text_input("Enter the tone")
+    # Campi di input
+    url1 = st.text_input("Inserisci il primo URL")
+    url2 = st.text_input("Inserisci il secondo URL")
+    url3 = st.text_input("Inserisci il terzo URL")
+    keyword = st.text_input("Inserisci la parola chiave")
+    target_audience = st.text_input("Inserisci il pubblico target")
+    tone = st.text_input("Inserisci il tono")
     
-    if st.button("Generate Article"):
-        st.write("Extracting text from URLs...")
+    if st.button("Genera Articolo"):
+        with st.spinner("Estrazione del testo dagli URL..."):
+            # Estrai il testo dagli URL
+            text1 = extract_text_from_url(url1)
+            text2 = extract_text_from_url(url2)
+            text3 = extract_text_from_url(url3)
+            
+            if not text1 or not text2 or not text3:
+                st.error("Impossibile estrarre il testo da uno o più URL.")
+                return
         
-        # Extract text from URLs
-        text1 = extract_text_from_url(url1)
-        text2 = extract_text_from_url(url2)
-        text3 = extract_text_from_url(url3)
+        with st.spinner("Combinazione e elaborazione del testo..."):
+            # Combina i testi
+            combined_text = f"{text1}\n\n{text2}\n\n{text3}"
         
-        if not text1 or not text2 or not text3:
-            st.error("Failed to extract text from one or more URLs.")
-            return
+        with st.spinner("Generazione dell'articolo con Claude 3.5 Sonnet..."):
+            # Genera l'articolo con Claude
+            article = generate_article_with_claude(combined_text, keyword, target_audience, tone)
+            
+            if not article:
+                st.error("Impossibile generare l'articolo con Claude.")
+                return
         
-        st.write("Combining and processing text...")
+        with st.spinner("Generazione dei prompt per le immagini con ChatGPT..."):
+            # Genera i prompt per le immagini
+            prompt1 = generate_image_prompt(keyword, tone, article)
+            prompt2 = generate_image_prompt(keyword, tone, article)
+            prompt3 = generate_image_prompt(keyword, tone, article)
         
-        # Combine texts
-        combined_text = f"{text1}\n\n{text2}\n\n{text3}"
+        with st.spinner("Generazione delle immagini con DALL-E..."):
+            # Genera le immagini
+            image1 = generate_image(prompt1)
+            image2 = generate_image(prompt2)
+            image3 = generate_image(prompt3)
+            
+            if not image1 or not image2 or not image3:
+                st.error("Impossibile generare una o più immagini.")
+                return
         
-        st.write("Generating article with Claude 3.5 Sonnet...")
+        # Sostituisci i segnaposto delle immagini nell'articolo
+        article = article.replace("![Immagine 1](segnaposto_immagine_1)", f"![Immagine 1]({image1})")
+        article = article.replace("![Immagine 2](segnaposto_immagine_2)", f"![Immagine 2]({image2})")
+        article = article.replace("![Immagine 3](segnaposto_immagine_3)", f"![Immagine 3]({image3})")
         
-        # Generate article with Claude
-        article = generate_article_with_claude(combined_text, keyword, target_audience, tone)
-        
-        if not article:
-            st.error("Failed to generate article with Claude.")
-            return
-        
-        st.write("Generating image prompts with ChatGPT...")
-        
-        # Generate image prompts
-        prompt1 = generate_image_prompt(keyword, tone, article)
-        prompt2 = generate_image_prompt(keyword, tone, article)
-        prompt3 = generate_image_prompt(keyword, tone, article)
-        
-        st.write("Generating images with DALL-E...")
-        
-        # Generate images
-        image1 = generate_image(prompt1)
-        image2 = generate_image(prompt2)
-        image3 = generate_image(prompt3)
-        
-        if not image1 or not image2 or not image3:
-            st.error("Failed to generate one or more images.")
-            return
-        
-        # Replace image placeholders in the article
-        article = article.replace("![Image 1](image_placeholder_1)", f"![Image 1]({image1})")
-        article = article.replace("![Image 2](image_placeholder_2)", f"![Image 2]({image2})")
-        article = article.replace("![Image 3](image_placeholder_3)", f"![Image 3]({image3})")
-        
-        # Display the article
+        # Visualizza l'articolo
+        st.subheader("Articolo Generato:")
         st.markdown(article)
         
-        # Display the generated prompts
-        st.subheader("Generated Image Prompts:")
+        # Visualizza i prompt generati
+        st.subheader("Prompt Generati per le Immagini:")
         st.write(f"Prompt 1: {prompt1}")
         st.write(f"Prompt 2: {prompt2}")
         st.write(f"Prompt 3: {prompt3}")
+
+        # Opzione per scaricare l'articolo
+        st.download_button(
+            label="Scarica Articolo",
+            data=article,
+            file_name="articolo_seo.md",
+            mime="text/markdown",
+        )
 
 if __name__ == "__main__":
     main()
