@@ -10,9 +10,27 @@ from anthropic import Anthropic
 # Ensure you have the necessary NLTK data files
 nltk.download('punkt')
 
-# Load API keys from environment variables
-openai_client = OpenAI(api_key=st.secrets["openai_key"])
-anthropic_client = Anthropic(api_key=st.secrets["anthropic_key"])
+# Function to initialize or update clients
+def initialize_clients():
+    if 'openai_client' not in st.session_state or st.session_state.openai_key != st.session_state.get('prev_openai_key'):
+        st.session_state.openai_client = OpenAI(api_key=st.session_state.openai_key)
+        st.session_state.prev_openai_key = st.session_state.openai_key
+
+    if 'anthropic_client' not in st.session_state or st.session_state.anthropic_key != st.session_state.get('prev_anthropic_key'):
+        st.session_state.anthropic_client = Anthropic(api_key=st.session_state.anthropic_key)
+        st.session_state.prev_anthropic_key = st.session_state.anthropic_key
+
+# Sidebar for API configuration
+with st.sidebar:
+    st.title("Configurazione API")
+    st.session_state.openai_key = st.text_input("OpenAI Key", type="password", key="openai_key_input")
+    st.session_state.anthropic_key = st.text_input("Claude Key", type="password", key="anthropic_key_input")
+    
+    if st.session_state.openai_key and st.session_state.anthropic_key:
+        initialize_clients()
+        st.success("Chiavi API impostate con successo!")
+    else:
+        st.warning("Per favore, inserisci entrambe le chiavi API per continuare.")
 
 def extract_text_from_url(url):
     try:
@@ -45,7 +63,7 @@ def generate_image_prompt(keyword, tone, article_content):
         Generate the image prompt:
         """
 
-        response = openai_client.chat.completions.create(
+        response = st.session_state.openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a creative prompt engineer for image generation."},
@@ -62,7 +80,7 @@ def generate_image_prompt(keyword, tone, article_content):
 
 def generate_image(prompt):
     try:
-        response = openai_client.images.generate(
+        response = st.session_state.openai_client.images.generate(
             model="dall-e-3",
             prompt=prompt,
             n=1,
@@ -99,7 +117,7 @@ def generate_article_with_claude(combined_text, keyword, target_audience, tone):
         Please format the article in Markdown, including placeholders for three images.
         """
 
-        response = anthropic_client.messages.create(
+        response = st.session_state.anthropic_client.messages.create(
             model="claude-3-5-sonnet-20240620",
             max_tokens=4096,
             temperature=0.7,
@@ -116,6 +134,11 @@ def generate_article_with_claude(combined_text, keyword, target_audience, tone):
 def main():
     st.title("SEO-Optimized Blog Article Generator")
     
+    # Check if API keys are set
+    if 'openai_client' not in st.session_state or 'anthropic_client' not in st.session_state:
+        st.warning("Please set your API keys in the sidebar to continue.")
+        return
+
     # Input fields
     url1 = st.text_input("Enter the first URL")
     url2 = st.text_input("Enter the second URL")
